@@ -53,7 +53,7 @@ usage: kload [options]            (k6 env vars BASE_URL, VUS, DURATION, RAMP_UP,
   --duration D           hold at N                                 (default 5m)
   --ramp-down D          ramp N -> 0                               (default 30s)
   --grace D              graceful ramp-down per VU                 (default 10s)
-  --tokens FILE          seed/tokens.json                          (default ../seed/tokens.json)
+  --tokens FILE          seed/tokens.json                          (default: ../seed or ../../seed/tokens.json)
   --threads N            event-loop threads                        (default: min(CPUs, 4))
   --source-ips SPEC      bind sockets to these local IPs, e.g. 10.0.0.5,10.0.0.6 or 127.0.0.1-127.0.0.8
                          (default for a loopback target: one 127.0.0.x per 25k VUs)
@@ -124,7 +124,9 @@ durations: 500ms, 30s, 5m, 1h"""
                 holdNs = dur(o["duration"] ?: env["DURATION"] ?: "5m"),
                 rampDownNs = dur(o["ramp-down"] ?: "30s"),
                 graceNs = dur(o["grace"] ?: "10s"),
-                tokens = loadTokens(o["tokens"] ?: env["TOKENS"] ?: "../seed/tokens.json"),
+                tokens = loadTokens(o["tokens"] ?: env["TOKENS"]
+                    ?: listOf("../seed/tokens.json", "../../seed/tokens.json", "seed/tokens.json").firstOrNull { File(it).exists() }
+                    ?: "../seed/tokens.json"),
                 threads = (o["threads"]?.toInt() ?: minOf(cpus, 4)).coerceIn(1, maxOf(1, vus)),
                 sourceIps = src,
                 timeoutNs = dur(o["timeout"] ?: "60s"),
